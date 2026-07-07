@@ -36,7 +36,8 @@ telemetry_lock = threading.Lock()
 processor = VideoProcessor()
 current_video_path = str(SAMPLE_VIDEOS_DIR / "VID20260704115232.mp4")
 current_video_name = os.path.basename(current_video_path)
-
+video_rotation_angle = 0
+restart_video_flag = False
 
 def _to_plain_json(value):
     if isinstance(value, dict):
@@ -51,17 +52,19 @@ def _to_plain_json(value):
 
 
 def generate_frames():
-    global telemetry_data, current_video_path
+    global telemetry_data, current_video_path, video_rotation_angle, restart_video_flag
     cap = None
     active_path = current_video_path
     last_alert_time = 0
 
     while True:
-        if active_path != current_video_path:
+        if active_path != current_video_path or restart_video_flag:
             if cap is not None:
                 cap.release()
             active_path = current_video_path
             cap = cv2.VideoCapture(active_path)
+            restart_video_flag = False
+            
         if cap is None:
             cap = cv2.VideoCapture(active_path)
 
@@ -73,13 +76,24 @@ def generate_frames():
         if not ret:
             cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
             continue
+            
+        if video_rotation_angle == 90:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+        elif video_rotation_angle == 180:
+            frame = cv2.rotate(frame, cv2.ROTATE_180)
+        elif video_rotation_angle == 270:
+            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
         processed_frame, metrics = processor.process_frame(frame)
         
         # Update telemetry data safely
         with telemetry_lock:
             import random
-            speed = 45 + random.randint(-2, 2)
+            import math
+            import time
+            # Simulate a realistic speed that accelerates and decelerates between 10 km/h and 110 km/h
+            speed = int(60 + 50 * math.sin(time.time() * 0.2) + random.randint(-2, 2))
+            speed = max(0, speed)
             risk_score = metrics.get('risk_score', 0)
             ttc = max(0.5, 3.5 - (risk_score / 30.0)) if risk_score > 0 else 5.0 + random.random()
             
@@ -127,6 +141,28 @@ def upload_video():
         current_video_name = filename
     return redirect(url_for('index'))
 
+@app.route('/delete_video', methods=['POST'])
+def delete_video():
+    global current_video_path, current_video_name, video_rotation_angle
+    
+    current_video_path = str(SAMPLE_VIDEOS_DIR / "VID20260704115232.mp4")
+    current_video_name = os.path.basename(current_video_path)
+    video_rotation_angle = 0
+    
+    return redirect(url_for('index'))
+
+@app.route('/restart_video', methods=['POST'])
+def restart_video():
+    global restart_video_flag
+    restart_video_flag = True
+    return redirect(url_for('index'))
+
+@app.route('/rotate_video', methods=['POST'])
+def rotate_video():
+    global video_rotation_angle
+    video_rotation_angle = (video_rotation_angle + 90) % 360
+    return redirect(url_for('index'))
+
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -137,4 +173,4 @@ def telemetry():
         return jsonify(telemetry_data)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

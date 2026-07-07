@@ -25,10 +25,10 @@ class VideoProcessor:
     def process_frame(self, frame):
         self.frame_count += 1
         
-        # 1. Resize for performance (if it's huge, 1080p -> 720p)
+        # 1. Resize for performance (reduce to 640 width to significantly speed up processing)
         h, w = frame.shape[:2]
-        if w > 1280:
-            scale = 1280 / w
+        if w > 640:
+            scale = 640 / w
             frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
         h, w = frame.shape[:2]
         

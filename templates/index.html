@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAASTA AI - ADAS Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=13) }}">
 </head>
 <body>
     <div class="shell">
@@ -18,13 +18,13 @@
                 </div>
             </div>
             <nav class="rail-nav" aria-label="Primary">
-                <button class="active" data-view="dashboard"><span>GRID</span>Dashboard</button>
-                <button data-view="detections"><span>BOX</span>Detections</button>
-                <button data-view="lane"><span>LANE</span>Lane Assist</button>
-                <button data-view="risk"><span>WARN</span>Risk Analysis</button>
-                <button data-view="stats"><span>BAR</span>Statistics</button>
-                <button data-view="alerts"><span>TIME</span>Alert History</button>
-                <button data-view="settings"><span>SET</span>Settings</button>
+                <button class="active" data-view="dashboard"><span>🎛️</span>Dashboard</button>
+                <button data-view="detections"><span>🎯</span>Detections</button>
+                <button data-view="lane"><span>🛣️</span>Lane Assist</button>
+                <button data-view="risk"><span>🚨</span>Risk Analysis</button>
+                <button data-view="stats"><span>📈</span>Statistics</button>
+                <button data-view="alerts"><span>⏰</span>Alert History</button>
+                <button data-view="settings"><span>⚙️</span>Settings</button>
             </nav>
             <div class="source-card">
                 <div class="source-title">Video Source</div>
@@ -33,6 +33,17 @@
                     <label class="upload-label" for="video-upload">Upload video</label>
                     <input id="video-upload" type="file" name="video" accept="video/mp4,video/avi,video/mov,video/mkv" required>
                     <button type="submit">Load video</button>
+                </form>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <form action="{{ url_for('restart_video') }}" method="post" style="flex: 1;">
+                        <button type="submit" style="background: rgba(47,204,255,0.15); color: #40d7ff; border: 1px solid rgba(47,204,255,0.4); width: 100%; border-radius: 6px; padding: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: 0.2s;">Restart</button>
+                    </form>
+                    <form action="{{ url_for('rotate_video') }}" method="post" style="flex: 1;">
+                        <button type="submit" style="background: rgba(255,170,0,0.15); color: #ffaa00; border: 1px solid rgba(255,170,0,0.4); width: 100%; border-radius: 6px; padding: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: 0.2s;">Rotate</button>
+                    </form>
+                </div>
+                <form action="{{ url_for('delete_video') }}" method="post" style="margin-top: 8px;">
+                    <button type="submit" style="background: rgba(255,63,63,0.15); color: var(--red); border: 1px solid rgba(255,63,63,0.4); width: 100%; border-radius: 6px; padding: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: 0.2s;">Reset to Default Video</button>
                 </form>
             </div>
             <div class="rail-footer">
@@ -60,13 +71,20 @@
                 <section class="content-grid">
                     <section class="primary">
                         <div class="video-frame panel-tight">
-                            <img src="{{ url_for('video_feed') }}" id="video-stream" alt="Live Feed">
-                            <div class="rec-badge"><i></i>REC</div>
-                            <div class="speed-card"><small>Speed</small><strong><span id="speed-val">—</span></strong><em>km/h</em></div>
                             <div id="critical-overlay" class="hidden">
                                 <div class="warning-icon">!</div>
                                 <div class="warning-title">WARNING: VEHICLE AHEAD</div>
                                 <div class="warning-subtitle">HIGH COLLISION RISK - BRAKE IMMEDIATELY</div>
+                            </div>
+                            <img src="{{ url_for('video_feed') }}" id="video-stream" alt="Live Feed">
+                            <div class="rec-badge"><i></i>REC</div>
+                            <div class="speed-card">
+                                <div class="speed-ring" id="speed-ring"></div>
+                                <div style="position: relative; z-index: 2; padding-top: 15px;">
+                                    <small>Speed</small>
+                                    <strong id="speed-val">0</strong>
+                                    <em>km/h</em>
+                                </div>
                             </div>
                         </div>
 
@@ -100,11 +118,11 @@
                         <section class="panel risk-panel" id="risk-panel-bg">
                             <h3>Risk Overview</h3>
                             <div class="gauge-shell">
-                                <div class="gauge-arc"></div>
+                                <div class="gauge-arc" id="risk-gauge-arc"></div>
                                 <div class="gauge-text"><strong id="gauge-text">—</strong><span>%</span><em id="risk-label">Waiting</em></div>
                             </div>
                             <p id="risk-copy">No live risk reading yet.</p>
-                            <div class="risk-level"><small>Risk Level</small><div><span>Safe</span><span>Caution</span><span>Warning</span><b>Critical</b></div></div>
+                            <div class="risk-level"><small>Risk Level</small><div id="risk-level-bars"><span id="rl-safe">Safe</span><span id="rl-caution">Caution</span><span id="rl-warning">Warning</span><span id="rl-critical">Critical</span></div></div>
                         </section>
                         <section class="panel detection-panel">
                             <h3>Detection Summary</h3>
@@ -278,6 +296,6 @@
 
         </main>
     </div>
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <script src="{{ url_for('static', filename='main.js', v=12) }}"></script>
 </body>
 </html>

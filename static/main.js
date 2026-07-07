@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
   const els = {
     speed: $("speed-val"), ttc: $("ttc-val"), vehicles: $("v-count"), pedestrians: $("p-count"),
@@ -242,6 +242,42 @@
       setText(els.total, (m.vehicles||0)+(m.pedestrians||0)+(m.cyclists||0)+(m.trucks||0)+(m.buses||0)+(m.traffic_lights||0));
       setText(els.gauge, Math.round(risk)); setText(els.badge, Math.round(risk) + "%");
       setText(els.laneStatus, (m.lane_status || "Stable").toUpperCase()); setText(els.laneConf, m.lane_confidence || "—");
+      
+      // Update dynamic radial rings
+      var riskColor = risk >= 75 ? "#ff3f3f" : risk >= 40 ? "#ffd21f" : "#20d4ff";
+      var gaugeArc = document.getElementById("risk-gauge-arc");
+      if (gaugeArc) {
+        gaugeArc.style.setProperty("--risk-pct", risk + "%");
+        gaugeArc.style.setProperty("--risk-deg", (risk * 1.8) + "deg");
+        gaugeArc.style.setProperty("--risk-color", riskColor);
+      }
+      
+      // Update Risk Level Bar dynamically
+      ['rl-safe', 'rl-caution', 'rl-warning', 'rl-critical'].forEach(id => {
+        var el = document.getElementById(id);
+        if (el) el.className = '';
+      });
+      if (risk >= 75) {
+        var el = document.getElementById('rl-critical');
+        if (el) el.className = 'active-critical';
+      } else if (risk >= 50) {
+        var el = document.getElementById('rl-warning');
+        if (el) el.className = 'active-warning';
+      } else if (risk >= 25) {
+        var el = document.getElementById('rl-caution');
+        if (el) el.className = 'active-caution';
+      } else {
+        var el = document.getElementById('rl-safe');
+        if (el) el.className = 'active-safe';
+      }
+
+      var speedRing = document.getElementById("speed-ring");
+      if (speedRing) {
+        // Assume max speed is around 120 km/h for the gauge fill
+        var speedPct = Math.min(100, ((data.speed || 0) / 120) * 100);
+        speedRing.style.setProperty("--speed-pct", speedPct + "%");
+      }
+
       const fpsEl = $("fps-val"); if (fpsEl) fpsEl.textContent = (data.speed ? (data.speed / 2.4).toFixed(1) : "0.0");
       const resEl = $("res-val"); if (resEl) resEl.textContent = "Live feed";
       setRiskState(risk, m.risk_status); updateThreats(risk, m); drawChart();
